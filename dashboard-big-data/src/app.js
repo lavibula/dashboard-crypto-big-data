@@ -77,40 +77,6 @@ app.get('/api/price', async (req, res) => {
 });
 
 
-// API lấy giá thấp nhất và cao nhất trong 24 giờ
-app.get('/get-price-range', async (req, res) => {
-  const { crypto } = req.query;
-
-  try {
-    // Lấy giá cao nhất trong 24 giờ
-    const highResult = await pool.query(
-      'SELECT * FROM bigdata.price_24h WHERE base = $1 ORDER BY updated_at DESC LIMIT 1',
-      [crypto]
-    );
-
-    // Lấy giá thấp nhất trong 24 giờ
-    const lowResult = await pool.query(
-      'SELECT * FROM bigdata.price_24h WHERE base = $1 ORDER BY updated_at ASC LIMIT 1',
-      [crypto]
-    );
-
-    if (highResult.rows.length > 0 && lowResult.rows.length > 0) {
-      const highPrice = highResult.rows[0].price;
-      const lowPrice = lowResult.rows[0].price;
-
-      res.json({
-        high: highPrice,
-        low: lowPrice,
-      });
-    } else {
-      res.status(404).json({ error: 'Không tìm thấy dữ liệu giá cho đồng tiền này.' });
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    res.status(500).json({ error: 'Lỗi khi truy vấn cơ sở dữ liệu.' });
-  }
-});
-
 // Khởi chạy server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
