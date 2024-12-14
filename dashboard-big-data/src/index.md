@@ -118,7 +118,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 fetchData('BTC');
-
+// Gọi lại API mỗi 30 giây
+setInterval(() => {
+  const selectedCrypto = document.querySelector('input[name="crypto"]:checked').value;
+  fetchData(selectedCrypto);
+  fetchData1(selectedCrypto);  
+}, 10000);  
 
 ```
 
@@ -128,39 +133,32 @@ fetchData('BTC');
 </div>
 
 <!-- Cards with big numbers -->
+<div class="card">
+  <span id="update-time"></span>
+</div>
 
 <div class="grid grid-cols-4">
   <div class="card">
-    <h2>Price 🇺🇸</h2>
-    <span class="big">${launches.filter((d) => d.stateId === "US").length.toLocaleString("en-US")}</span>
+    <h2>Price </h2>
+    <span class="big" id="price-us"></span>
   </div>
   <div class="card">
-    <h2>Market Cap 🇷🇺 </h2>
-    <span class="big">${launches.filter((d) => d.stateId === "SU" || d.stateId === "RU").length.toLocaleString("en-US")}</span>
+    <h2>Market Cap </h2>
+    <span class="big" id="market-cap-ru"></span>
   </div>
   <div class="card">
-    <h2>24H Volume 🇨🇳</h2>
-    <span class="big">${launches.filter((d) => d.stateId === "CN").length.toLocaleString("en-US")}</span>
+    <h2>24H Volume </h2>
+    <span class="big" id="volume-cn"></span>
   </div>
   <div class="card">
     <h2>24H Change</h2>
-    <span class="big">${launches.filter((d) => d.stateId !== "US" && d.stateId !== "SU" && d.stateId !== "RU" && d.stateId !== "CN").length.toLocaleString("en-US")}</span>
+    <span class="big" id="change-other">0.00%</span> 
   </div>
+
+
+
 </div>
 
-<!-- Dropdown for Selecting Cryptocurrency -->
-<!-- <div>
-  <label for="crypto-select">Select Cryptocurrency: </label>
-  <select id="crypto-select">
-    <option value="BTC">BTC</option>
-    <option value="ETH">ETH</option>
-    <option value="USDT">USDT</option>
-    <option value="XRP">XRP</option>
-    <option value="ADA">ADA</option>
-    <option value="DOGE">DOGE</option>
-    <option value="MATIC">MATIC</option>
-  </select>
-</div> -->
 
 <div>
   <label>Select Cryptocurrency: </label>
@@ -201,6 +199,113 @@ fetchData('BTC');
 
 
 
+
+<script>
+const cryptoMap = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+  LTC: "litecoin",
+  ADA: "cardano",
+  XRP: "ripple",
+  USDT: "tether",
+  DOGE: "dogecoin",
+  XLM: "stellar",
+  NEAR: "near",
+  ATOM: "cosmos",
+  USDC: "usd-coin",
+  DOT: "polkadot",
+  TRX: "tron",
+  LINK: "chainlink",
+  SOL: "solana",
+  SHIB: "shiba-inu",
+  MATIC: "matic-network"
+};
+function formatNumber(num) {
+  if (num >= 1e9) {
+    return (num / 1e9).toFixed(2) + 'B'; // Tỷ
+  } else if (num >= 1e6) {
+    return (num / 1e6).toFixed(2) + 'M'; // Triệu
+  } else if (num >= 1e3) {
+    return (num / 1e3).toFixed(2) + 'K'; // Nghìn
+  } else {
+    return num.toLocaleString("en-US"); // Không cần thay đổi nếu nhỏ hơn nghìn
+  }
+}
+
+async function fetchData1(crypto) {
+  try {
+    const cryptoFullName = cryptoMap[crypto] || crypto;
+    const response = await fetch(`http://localhost:3000/api/price?crypto=${cryptoFullName}`);
+    const data = await response.json();
+
+    console.log(data);  // Kiểm tra dữ liệu trả về
+
+    const cryptoData = data[0]; // Lấy đối tượng đầu tiên trong mảng
+
+    // Cập nhật các phần tử HTML với dữ liệu đã được định dạng
+    document.getElementById('price-us').innerText = cryptoData && cryptoData.price ? formatNumber(cryptoData.price) : "N/A";
+    document.getElementById('market-cap-ru').innerText = cryptoData && cryptoData.market_cap ? formatNumber(cryptoData.market_cap) : "N/A";
+    document.getElementById('volume-cn').innerText = cryptoData && cryptoData.volume_24h ? formatNumber(cryptoData.volume_24h) : "N/A";
+    update24HChange(cryptoData.change_24h.toFixed(2));
+
+    // Cập nhật thời gian cập nhật
+  const updateTime = cryptoData && cryptoData.updated_at ? 
+    new Date(cryptoData.updated_at).toLocaleString('en-US', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hour12: false, // 24h format
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+    : "N/A"; // Kiểm tra và chuyển đổi timestamp về thời gian thực ở Việt Nam
+
+  document.getElementById('update-time').innerText = `Last Updated: ${updateTime}`; // Hiển thị thời gian
+
+
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+  }
+}
+
+// Hàm xử lý khi người dùng chọn đồng tiền điện tử
+document.querySelectorAll('input[name="crypto"]').forEach((input) => {
+  input.addEventListener("change", (event) => {
+    const selectedCrypto = event.target.value;
+    fetchData1(selectedCrypto); // Gọi hàm fetchData khi thay đổi lựa chọn
+  });
+});
+
+// Gọi hàm fetchData khi trang tải để hiển thị dữ liệu mặc định (BTC)
+// Thêm kiểm tra xem có giá trị mặc định hay không
+window.onload = () => {
+  const selectedCrypto = document.querySelector('input[name="crypto"]:checked');
+  if (selectedCrypto) {
+    fetchData1(selectedCrypto.value);  // Gọi hàm fetchData khi có sự kiện trang tải
+  }
+};
+
+// Hàm thay đổi màu sắc và nội dung của 24H Change
+function update24HChange(value) {
+  const changeElement = document.getElementById("change-other");
+
+  // Cập nhật giá trị hiển thị
+  changeElement.textContent = value + "%";
+
+  // Xóa các lớp cũ trước khi thêm lớp mới
+  changeElement.classList.remove("change-negative", "change-positive");
+
+  // Kiểm tra xem giá trị là âm hay dương để thay đổi màu sắc
+  if (value < 0) {
+    changeElement.classList.add("change-negative"); // Màu đỏ cho giá trị âm
+  } else if (value > 0) {
+    changeElement.classList.add("change-positive"); // Màu xanh cho giá trị dương
+  }
+}
+
+</script>
 
 <!-- Chart container -->
 <div class="card">
@@ -269,6 +374,17 @@ fetchData('BTC');
   .crypto-options label {
     font-family: 'Roboto', sans-serif;
   }
+
+/* Màu sắc cho giá trị âm */
+.change-negative {
+  color: #EE7674;
+}
+
+/* Màu sắc cho giá trị dương */
+.change-positive {
+  color: #4CB963;
+}
+
 
 </style>
 
