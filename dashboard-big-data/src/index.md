@@ -41,26 +41,30 @@ function drawCharts() {
     const chart1 = Plot.plot({
       width: chartWidth,  // Set the width dynamically based on the container
       height: chartHeight, // Set the height dynamically based on the container
-      x: { label: "Date", tickFormat: d => d.toLocaleDateString() },
+          x: { 
+      label: "Date", 
+      tickFormat: d => d.toLocaleDateString(),
+      tickPadding: 1,  // Tăng khoảng cách giữa các tick và nhãn
+    },
       y: { 
         label: "Close Price (USD)",
         domain: [Math.min(...processedData.map(d => d.y)), Math.max(...processedData.map(d => d.y))],
-        tickPadding: 2,  // Thêm khoảng cách giữa các tick và nhãn
-        tickSize: 1,  // Kích thước các tick trên trục y
-        offset: 30,  // Dịch các nhãn của trục y sang phải một chút để tránh bị che khuất
+        tickPadding: 2,  
+        tickSize: 1,  
+        offset: 30,  
         tickFormat: d => {
-          // Kiểm tra nếu giá trị lớn hơn 1000 và chuyển đổi sang định dạng rút gọn
           if (d >= 10000) {
             return (d / 1000).toFixed(0) + 'k'; // Ví dụ 100000 -> 100k
           }
           else if (d < 10000 & d >= 1000) {
             return d.toFixed(0); // Ví dụ 100000 -> 100k
           }
-          return d.toFixed(2); // Đối với các giá trị nhỏ hơn 1000, giữ nguyên định dạng
+          return d.toFixed(2); 
         }
       },
       marks: [
-        Plot.line(processedData, { x: "x", y: "y", stroke: currentColor }),  // Đặt màu của đường (line)
+        Plot.line(processedData, {x:'x', y:'y', stroke: currentColor}),
+        Plot.areaY(processedData, { x: "x", y: "y", fill: currentColor, fillOpacity: 0.1 }),  
         Plot.ruleY([0]) // Vẽ đường y=0 để tham chiếu
       ],
     });
@@ -161,7 +165,6 @@ setInterval(() => {
 
 
 <div>
-  <label>Select Cryptocurrency: </label>
   <div class="crypto-options">
     <div>
       <input type="radio" id="BTC" name="crypto" value="BTC" checked>
@@ -314,7 +317,7 @@ function update24HChange(value) {
 
 
 ---
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 
