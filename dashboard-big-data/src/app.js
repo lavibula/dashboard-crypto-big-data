@@ -9,7 +9,7 @@ import cors from 'cors';  // Đảm bảo dùng đúng cú pháp
 import { static as serveStatic } from 'express';
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 // Đường dẫn thư mục hiện tại
 const __filename = fileURLToPath(import.meta.url);
@@ -23,10 +23,10 @@ app.use(cors());
 
 // Kết nối đến PostgreSQL
 const client = new Client({
-  user: 'dashboard',
+  user: 'nmt',
   host: '34.80.252.31',
   database: 'combined',
-  password: 'btcanalysishust',
+  password: 'nmt_acc',
   port: 5432,
 });
 
@@ -76,6 +76,97 @@ app.get('/api/price', async (req, res) => {
   }
 });
 
+// app.get('/api/ema', async (req, res) => {
+//   const { crypto } = req.query;  
+
+//   // Nếu không có tham số crypto, trả về lỗi 400
+//   if (!crypto) {
+//     return res.status(400).send('Crypto parameter is required');
+//   }
+
+//   try {
+//     const result = await client.query(`
+//       SELECT * 
+//       FROM bigdata.ema 
+//       WHERE BASE = $1  -- Sử dụng tham số để tránh SQL injection
+      
+//     `, [crypto]);  // Truyền tham số crypto vào câu query
+
+//     res.json(result.rows);
+//   } catch (err) {
+//     console.error('Error executing query', err);
+//     res.status(500).send('Error retrieving data');
+//   }
+// });
+app.get('/api/ema_pre', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      `SELECT "ema5","ema10","ema20","ema50","ema100","ema200","ema13","ema12","ema26","BASE","DATE" 
+      FROM bigdata.ema 
+      WHERE "BASE"=$1 
+      ORDER By "DATE" ASC`,
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/ema_now', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      `SELECT "ema5","ema10","ema20","ema50","ema100","ema200","ema13","ema12","ema26" 
+      FROM bigdata.ema 
+      WHERE "BASE"=$1 
+      ORDER By "DATE" DESC LIMIT 1`,
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+
+
+app.get('/api/bullbear', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      `SELECT 
+          p.base, 
+          p.date, 
+          e."ema13", 
+          p.high,
+          p.low,
+          (p.high - e."ema13") AS bear, 
+          (p.low - e."ema13") AS bull
+      FROM 
+          bigdata.price p
+      JOIN 
+          bigdata.ema e 
+      ON 
+          p.base = e."BASE" AND p.date = e."DATE"
+      WHERE 
+          p.base = $1
+          AND TO_DATE(p.date, 'YYYY-MM-DD') >= (CURRENT_DATE - INTERVAL '2 month')
+      ORDER BY 
+          TO_DATE(p.date, 'YYYY-MM-DD') ASC;
+      `,
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
 
 // Khởi chạy server
 app.listen(PORT, () => {

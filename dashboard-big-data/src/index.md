@@ -10,7 +10,7 @@ let currentColor = "#ffa37b";
 // Hàm lấy dữ liệu từ API dựa trên loại cryptocurrency
 async function fetchData(crypto) {
   try {
-    const endpoint = `http://localhost:3000/api/data?crypto=${crypto}`;
+    const endpoint = `http://localhost:3001/api/data?crypto=${crypto}`;
     const response = await fetch(endpoint);
     const data = await response.json();
 
@@ -121,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchData('BTC');
 });
 
-fetchData('BTC');
 // Gọi lại API mỗi 30 giây
 setInterval(() => {
   const selectedCrypto = document.querySelector('input[name="crypto"]:checked').value;
@@ -238,7 +237,7 @@ function formatNumber(num) {
 async function fetchData1(crypto) {
   try {
     const cryptoFullName = cryptoMap[crypto] || crypto;
-    const response = await fetch(`http://localhost:3000/api/price?crypto=${cryptoFullName}`);
+    const response = await fetch(`http://localhost:3001/api/price?crypto=${cryptoFullName}`);
     const data = await response.json();
 
     console.log(data);  // Kiểm tra dữ liệu trả về
@@ -331,6 +330,8 @@ function update24HChange(value) {
   text-align: center;
 }
 
+
+
 .hero h1 {
   margin: 1rem 0;
   padding: 1rem 0;
@@ -391,3 +392,157 @@ function update24HChange(value) {
 
 </style>
 
+
+
+```js
+
+// Định nghĩa tỷ lệ cho chiều rộng và chiều cao
+const showGridLinh = true;  // Biến điều khiển việc hiển thị lưới (true/false)
+
+const colorsLinh = {
+  positiveColor: "#226f54",  // Màu xanh lá cây cho giá trị dương
+  negativeColor: "#da2c38",  // Màu đỏ cho giá trị âm
+};
+
+let processedDataLinh = []; 
+
+// Hàm lấy dữ liệu từ API dựa trên loại cryptocurrency
+async function fetchDataLinh(crypto) {
+  try {
+    const endpoint = `http://localhost:3001/api/bullbear?crypto=${crypto}`;
+    const response = await fetch(endpoint);
+    const data = await response.json();
+
+    console.log(data);  // Kiểm tra dữ liệu trả về từ API
+
+    processedDataLinh = data.map(row => {
+      const ema13 = row.ema13;  // EMA(13) value
+      const high = row.high;    // High value
+      const low = row.low;      // Low value
+
+      return {
+        x: new Date(row.date),  // Chuyển đổi date thành kiểu Date
+        y: ema13,               // Sử dụng giá trị 'close' để vẽ biểu đồ
+        y2: low,
+        y3: high,
+        bullPower: high - ema13, // Bull Power = High - EMA(13)
+        bearPower: low - ema13   // Bear Power = Low - EMA(13)
+      };
+    });
+
+    // Sau khi dữ liệu được xử lý, gọi hàm để vẽ biểu đồ
+    drawChartsLinh();
+
+  } catch (error) {
+    console.error("Lỗi khi tải dữ liệu từ API:", error);
+  }
+}
+
+// Hàm vẽ biểu đồ chung
+function drawChartLinh(title, dataKey, chartContainer, chartType = "lineWithBar") {
+  const chartWidth = chartContainer.clientWidth;  // Lấy chiều rộng của container
+  const chartHeight = chartContainer.clientHeight;  // Chiều cao theo tỷ lệ
+
+  let marks;
+  if (chartType === "lineWithBar") {
+    // Biểu đồ kết hợp đường và thanh
+    marks = [
+      Plot.barY(processedDataLinh, {
+        x: "x",
+        y1: "y2",  
+        y2: "y3",  
+        fill: colorsLinh.positiveColor,
+      }),
+      Plot.line(processedDataLinh, { x: "x", y: dataKey, stroke: colorsLinh.negativeColor }),
+      Plot.ruleY([0])
+    ];
+  } else if (chartType === "bar") {
+    // Biểu đồ thanh
+    marks = [
+      Plot.barY(processedDataLinh, {
+        x: "x",
+        y: dataKey,
+        fill: d => d[dataKey] >= 0 ? colorsLinh.positiveColor : colorsLinh.negativeColor,
+      }),
+      Plot.ruleY([0])
+    ];
+  }
+
+  const chart = Plot.plot({
+    title: title,
+    width: chartWidth,  
+    height: chartHeight, 
+    marginBottom: 50,
+    x: { 
+      label: "Date", 
+      tickFormat: d => d.toLocaleDateString(),
+      tickPadding: 1,  
+      tickCount: 6,   
+      ticks: processedDataLinh
+        .filter((_, index) => index % Math.floor(processedDataLinh.length / 10) === 0) // Chỉ giữ 10 tick cách đều
+        .slice(0, 15) // Đảm bảo không vượt quá 10 tick
+        .map(d => new Date(d.x)),
+      grid: showGridLinh,  // Hiển thị lưới cho trục X nếu showGridLinh là true
+    },
+    y: { 
+      label: title,
+      domain: [Math.min(...processedDataLinh.map(d => d[dataKey])) - Math.max(...processedDataLinh.map(d => d[dataKey])) / 10, 
+              Math.max(...processedDataLinh.map(d => d[dataKey])) + Math.max(...processedDataLinh.map(d => d[dataKey])) / 10],
+      tickFormat: d => {
+        if (d >= 10000) {
+          return (d / 1000).toFixed(0) + 'k'; 
+        } else if (d < 10000 & d >= 1000) {
+          return d.toFixed(0); 
+        }
+        return d.toFixed(2); 
+      },
+      grid: showGridLinh,  // Hiển thị lưới cho trục Y nếu showGridLinh là true
+    },
+    marks: marks, // Dùng mảng `marks` đã định nghĩa ở trên
+  });
+
+  // Render chart vào container tương ứng
+  chartContainer.innerHTML = "";
+  chartContainer.appendChild(chart);
+}
+
+// Hàm vẽ tất cả các biểu đồ
+function drawChartsLinh() {
+  const emaChartContainer = document.getElementById("ema-chart-container");
+  const bullChartContainer = document.getElementById("bull-chart-container");
+  const bearChartContainer = document.getElementById("bear-chart-container");
+
+  // Vẽ biểu đồ EMA, Bull Power và Bear Power
+  if (emaChartContainer && bullChartContainer && bearChartContainer) {
+    drawChartLinh("EMA13", "y", emaChartContainer, "lineWithBar");     // EMA: kết hợp đường và thanh
+    drawChartLinh("Bull Power", "bullPower", bullChartContainer, "bar");  // Bull Power: biểu đồ thanh
+    drawChartLinh("Bear Power", "bearPower", bearChartContainer, "bar");  // Bear Power: biểu đồ thanh
+  }
+}
+
+fetchDataLinh('BTC');
+
+
+```
+<div style="font-family: var(--sans-serif);font-size: 2vw; margin-bottom: 2rem">Bull Bear chart for Bitcoin</div>
+
+<div class="chart-wrapper" style="display: flex; flex-direction: column; gap: 0.2rem; border: 1px solid #4a4e69; border-radius: 1%; background: #161616; align-items: center">
+  
+  <div id="ema-chart-container" class="chart-container"></div>
+  <div id="bear-chart-container" class="chart-container"></div>
+  <div id="bull-chart-container" class="chart-container"></div>
+</div>  
+
+<style>
+.chart-container {
+  width: 95%; /* Độ rộng đầy đủ của container */
+  /* height: 100 %; */
+  aspect-ratio: 7 / 2; 
+  margin-top: 1rem; /* Loại bỏ khoảng cách */
+  margin-left: 1rem;
+  margin-right: 2rem;
+  font-family: var(--sans-serif);
+  font-size: 14vw;
+  justify-content: center
+}
+</style>

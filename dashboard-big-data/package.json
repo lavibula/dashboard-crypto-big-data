@@ -4,7 +4,7 @@
   "scripts": {
     "clean": "rimraf src/.observablehq/cache",
     "build": "observable build",
-    "dev": "concurrently \"observable preview\" \"node src/app.js\"",
+    "dev": "concurrently \"observable preview --port 3001\" \"node src/app.js\"",
     "deploy": "observable deploy",
     "observable": "observable"
   },
@@ -15,6 +15,7 @@
     "@observablehq/plot": "^0.6.16",
     "axios": "^1.7.9",
     "body-parser": "^1.20.3",
+    "concurrently": "^9.1.0",
     "cors": "^2.8.5",
     "d3-dsv": "^3.0.1",
     "d3-time-format": "^4.1.0",

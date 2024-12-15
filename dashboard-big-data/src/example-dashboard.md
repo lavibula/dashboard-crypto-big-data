@@ -1,3 +1,4 @@
+
 ---
 theme: dashboard
 title: Example dashboard
@@ -69,6 +70,9 @@ function launchTimeline(data, {width} = {}) {
   </div>
 </div>
 
+
+
+
 <!-- Plot of launch vehicles -->
 
 ```js
@@ -97,3 +101,75 @@ function vehicleChart(data, {width}) {
 </div>
 
 Data: Jonathan C. McDowell, [General Catalog of Artificial Space Objects](https://planet4589.org/space/gcat)
+
+
+<!-- Plot of bar chart -->
+
+```js
+
+async function fetchData(crypto) {
+  try {
+    const dataResponse = await fetch(`http://localhost:3001/api/data?crypto=${crypto}`);
+    const emaResponse = await fetch(`http://localhost:3001/api/ema_pre?crypto=${crypto}`);
+
+    const data = await dataResponse.json();
+    const emaData = await emaResponse.json();
+
+    console.log(data);
+    return data
+
+    // Define processedData inside the function
+    const processedData = data.map((row) => {
+      const emaRow = emaData.find((ema) => ema.DATE === row.DATE);
+      return {
+        x: new Date(row.DATE),
+        high: row.high,
+        low: row.low,
+        ema13: emaRow ? emaRow.ema13 : null,
+      };
+    });
+
+    return processedData; // Return processed data
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  }
+}
+
+function vehicleChart2(launches, {width}) {
+  return Plot.plot({
+    title: "Launches over the years",
+    width,
+    height: 300,
+    marks: [
+      Plot.barY(, {
+        x: "species",
+        y: "body_mass_g",
+        fill: "#55ac3e",
+        tip: true
+      }),
+      Plot.ruleY([0])
+    ]
+  })
+}
+
+
+```
+
+
+<div class="card">
+  ${resize((width) => Plot.barX([9, 4, 8, 1, 11, 3, 4, 2, 7, 5]).plot({width}))}
+</div>
+
+<div class="card">
+  ${resize((width) => vehicleChart2(launches, {width}))}
+</div>
+
+<div class="card">
+  ${resize((width) => Plot.barY([9, 4, 8, 1, 11, 3, 4, 2, 7, 5]).plot({width}))}
+</div>
+
+
+<style>
+
+
+</style>
