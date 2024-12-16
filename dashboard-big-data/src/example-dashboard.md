@@ -527,7 +527,7 @@ document.getElementById("EMA").addEventListener("change", () => {
   text-align: center; /* Căn giữa nội dung trong headers */
   vertical-align: middle; /* Căn giữa theo chiều dọc */
   font-weight: bold; /* Làm đậm chữ trong headers */
-  background-color: #f2f2f2; /* Tùy chọn: Thêm màu nền nhẹ cho headers */
+  background-color: #000000; /* Tùy chọn: Thêm màu nền nhẹ cho headers */
 }
 
 </style>

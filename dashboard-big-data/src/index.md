@@ -406,7 +406,7 @@ let processedDataLinh = [];
 // Hàm lấy dữ liệu từ API dựa trên loại cryptocurrency
 async function fetchDataLinh(crypto) {
   try {
-    const endpoint = `http://localhost:3001/api/bullbear?crypto=${crypto}`;
+    const endpoint = `http://localhost:3000/api/bullbear?crypto=${crypto}`;
     const response = await fetch(endpoint);
     const data = await response.json();
 
