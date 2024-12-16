@@ -23,10 +23,10 @@ app.use(cors());
 
 // Kết nối đến PostgreSQL
 const client = new Client({
-  user: 'dashboard',
+  user: 'nmt',
   host: '34.80.252.31',
   database: 'combined',
-  password: 'btcanalysishust',
+  password: 'nmt_acc',
   port: 5432,
 });
 
@@ -76,6 +76,248 @@ app.get('/api/price', async (req, res) => {
   }
 });
 
+app.get('/api/ema_pre', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      `SELECT "ema5","ema10","ema20","ema50","ema100","ema200","ema13","ema12","ema26","BASE","DATE" 
+      FROM bigdata.ema 
+      WHERE "BASE"=$1 
+      ORDER By "DATE" ASC`,
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/ema_now', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      `SELECT "ema5","ema10","ema20","ema50","ema100","ema200","ema13","ema12","ema26" 
+      FROM bigdata.ema 
+      WHERE "BASE"=$1 
+      ORDER By "DATE" DESC LIMIT 1`,
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+
+
+app.get('/api/bullbear', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      `SELECT 
+          p.base, 
+          p.date, 
+          e."ema13", 
+          p.high,
+          p.low,
+          (p.high - e."ema13") AS bear, 
+          (p.low - e."ema13") AS bull
+      FROM 
+          bigdata.price p
+      JOIN 
+          bigdata.ema e 
+      ON 
+          p.base = e."BASE" AND p.date = e."DATE"
+      WHERE 
+          p.base = $1
+          AND TO_DATE(p.date, 'YYYY-MM-DD') >= (CURRENT_DATE - INTERVAL '2 month')
+      ORDER BY 
+          TO_DATE(p.date, 'YYYY-MM-DD') ASC;
+      `,
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+
+app.get('/api/rsi_pre', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "RSI_14" as key,"BASE","DATE" FROM bigdata.rsi WHERE "BASE"=$1 ORDER By "DATE" ASC',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/rsi_now', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "RSI_14" FROM bigdata.rsi WHERE "BASE"=$1 ORDER By "DATE" DESC LIMIT 1',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+
+app.get('/api/sma_pre', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "SMA_5","SMA_10" as key,"SMA_20","SMA_50","SMA_100","SMA_200","BASE","DATE" FROM bigdata.sma WHERE "BASE"=$1 ORDER By "DATE" ASC',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/sma_now', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "SMA_5","SMA_10" ,"SMA_20","SMA_50","SMA_100","SMA_200" FROM bigdata.sma WHERE "BASE"=$1 ORDER By "DATE" DESC LIMIT 1',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/macd_pre', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "MACD" as key,"BASE","DATE" FROM bigdata.ema WHERE "BASE"=$1 ORDER By "DATE" ASC',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/macd_now', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "MACD" FROM bigdata.ema WHERE "BASE"=$1 ORDER By "DATE" DESC LIMIT 1',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/ema_pre', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "ema5","ema10","ema20","ema50","ema100","ema200","ema13","ema12","ema26","BASE","DATE" FROM bigdata.ema WHERE "BASE"=$1 ORDER By "DATE" ASC',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/ema_now', async (req, res) => {
+  try {
+    // Query để lấy dữ liệu từ bảng price_24h
+    const { crypto } = req.query;
+    const result = await client.query(
+      'SELECT "ema5","ema10","ema20","ema50","ema100","ema200","ema13","ema12","ema26" FROM bigdata.ema WHERE "BASE"=$1 ORDER By "DATE" DESC LIMIT 1',
+      [crypto] // Dùng parameterized query để tránh SQL injection
+    ); 
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+app.get('/api/macd_table', async (req, res) => {
+  try {
+    const result = await client.query(`
+      SELECT "BASE", "MACD", "DATE" 
+      FROM bigdata.ema
+      WHERE "BASE" IN ('BTC', 'ETH', 'USDT', 'ADA', 'DOGE', 'MATIC')
+      ORDER BY "DATE" DESC LIMIT 1
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu MACD:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+
+app.get('/api/rsi_table', async (req, res) => {
+  try {
+    const result = await client.query(`
+      SELECT "BASE", "RSI_14" as RSI, "DATE" 
+      FROM bigdata.rsi
+      WHERE "BASE" IN ('BTC', 'ETH', 'USDT', 'ADA', 'DOGE', 'MATIC')
+      ORDER BY "DATE" DESC LIMIT 6
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu RSI:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+
+app.get('/api/sma_table', async (req, res) => {
+  try {
+    const result = await client.query(`
+      SELECT "BASE", "SMA_5", "SMA_10", "SMA_20", "SMA_50", "SMA_100", "SMA_200", "DATE" 
+      FROM bigdata.sma
+      WHERE "BASE" IN ('BTC', 'ETH', 'USDT', 'ADA', 'DOGE', 'MATIC')
+      ORDER BY "DATE" DESC LIMIT 6
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu SMA:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
+
+app.get('/api/ema_table', async (req, res) => {
+  try {
+    const result = await client.query(`
+      SELECT "BASE", "ema5", "ema10", "ema20", "ema50", "ema100", "ema200", "DATE" 
+      FROM bigdata.ema
+      WHERE "BASE" IN ('BTC', 'ETH', 'USDT', 'ADA', 'DOGE', 'MATIC')
+      ORDER BY "DATE" DESC LIMIT 1
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu EMA:", error);
+    res.status(500).send("Lỗi server");
+  }
+});
 
 // Khởi chạy server
 app.listen(PORT, () => {
