@@ -4,7 +4,7 @@
   "scripts": {
     "clean": "rimraf src/.observablehq/cache",
     "build": "observable build",
-    "dev": "observable preview",
+    "dev": "concurrently \"observable preview\" \"node src/app.js\"",
     "deploy": "observable deploy",
     "observable": "observable"
   },
@@ -18,9 +18,11 @@
     "cors": "^2.8.5",
     "d3-dsv": "^3.0.1",
     "d3-time-format": "^4.1.0",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "googleapis": "^144.0.0",
-    "parquetjs": "^0.11.2"
+    "parquetjs": "^0.11.2",
+    "pg": "^8.13.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
